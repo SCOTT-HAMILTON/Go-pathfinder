@@ -17,3 +17,6 @@ It uses my go pathfind algorithms package https://github.com/SCOTT-HAMILTON/Go-p
  		
 (you may notice that pressing space bar in run mode causes to draw debug texts on top of the map)
  
+### Demo
+![little demo](https://cdn.discordapp.com/attachments/535927794740232194/549230442860118018/video.gif)
+
