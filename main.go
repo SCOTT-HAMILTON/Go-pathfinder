@@ -2,19 +2,19 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
-	"math/rand"
-	"github.com/SCOTT-HAMILTON/PathFinderAlgo"
-	"os"
-	"strconv"
 	"fmt"
-	"time"
+	"github.com/SCOTT-HAMILTON/PathFinderAlgo"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
+	"io/ioutil"
+	"math/rand"
+	"os"
+	"strconv"
+	"time"
 )
 
-const nbw           = 10
-const nbh           = 12
+const nbw = 10
+const nbh = 12
 
 func check(err error) {
 	if err != nil {
@@ -31,7 +31,7 @@ func saveToMapFile(map_walls []int) {
 	b, err := json.Marshal(map_walls)
 	print("Marshal init state : ")
 	check(err)
-	print("b : \n\"",b,"\"\n")
+	print("b : \n\"", b, "\"\n")
 	err = ioutil.WriteFile("map.json", b, 0644)
 	check(err)
 }
@@ -39,39 +39,37 @@ func saveToMapFile(map_walls []int) {
 func initMapFile() {
 	var map_walls []int
 	map_walls = make([]int, nbw*nbh)
-	for i:=0; i<nbw*nbh;i++ {
+	for i := 0; i < nbw*nbh; i++ {
 		rand := rand.Intn(100)
-		if (rand<90) {
+		if rand < 90 {
 			map_walls[i] = 0
-		}else{
+		} else {
 			map_walls[i] = 1
 		}
 	}
 	saveToMapFile(map_walls)
 }
 
-
-
 func loadMap() (map_walls []int) {
 	map_walls = make([]int, nbw*nbh)
 	data, err := ioutil.ReadFile("map.json")
-	print("\ndata first read : \n\"",data,"\"\n")
+	print("\ndata first read : \n\"", data, "\"\n")
 	if err != nil || len(data) == 0 {
 		initMapFile()
 		data, err = ioutil.ReadFile("map.json")
-		print("\ndata to unmarshal 2nd read : \n\"",data,"\"\n")
+		print("\ndata to unmarshal 2nd read : \n\"", data, "\"\n")
 		print("second try read state : ")
 		check(err)
 	}
-	
-	print("\ndata to unmarshal : \n\"",data,"\"\n")
+
+	print("\ndata to unmarshal : \n\"", data, "\"\n")
 	bytes := []byte(data)
 	err = json.Unmarshal(bytes, &map_walls)
 	print("unmarshal state : ")
 	check(err)
 
-	print("bytes : \n\"",bytes,"\"\n")
-	
+	print("bytes : \n\"", bytes, "\"\n")
+
 	return
 }
 
@@ -84,7 +82,7 @@ func printD(text string, rect sdl.Rect, font *ttf.Font, render *sdl.Renderer) {
 	check(err)
 	defer texture.Destroy()
 	render.Copy(texture, nil, &rect)
-}
+} // debug font
 
 func deleteMapCache(mapwalls *[]int) {
 	for i, n := range *mapwalls {
@@ -94,7 +92,6 @@ func deleteMapCache(mapwalls *[]int) {
 	}
 }
 
-
 func run() int {
 
 	//initMapFile()
@@ -103,18 +100,18 @@ func run() int {
 	star := PathFinderAlgo.NewAStar(nbw, nbh, 100, 19, &map_walls)
 	star.Init()
 
-	star.Update()
+	//star.Update()
 
-	print("Dist test : ",float32(star.Dist(0,11)), "\n")
-	
-	const xMargin       = 10
-	const yMargin       = 10
-	const widthSpacing  = 10
+	print("Dist test : ", float32(star.Dist(0, 11)), "\n")
+
+	const xMargin = 10
+	const yMargin = 10
+	const widthSpacing = 10
 	const heightSpacing = 10
-	const width         = 55
-	const height        = 55
-	windowWidth   := int32(xMargin*2+width*nbw+(nbw-1)*widthSpacing)
-	windowHeight  := int32(yMargin*2+height*nbh+(nbh-1)*heightSpacing)	
+	const width = 55
+	const height = 55
+	windowWidth := int32(xMargin*2 + width*nbw + (nbw-1)*widthSpacing)
+	windowHeight := int32(yMargin*2 + height*nbh + (nbh-1)*heightSpacing)
 	mode := 0 //mode for debugging
 	const nbMode = 3
 	gotPath := false
@@ -122,12 +119,12 @@ func run() int {
 	canUpdate := false
 
 	timer_update := time.Now()
-	
+
 	var window *sdl.Window
-	var font *ttf.Font
+	var font *ttf.Font //debug font
 	var running bool
 	var err error
-	
+
 	sdl.Init(sdl.INIT_EVERYTHING)
 	defer sdl.Quit()
 
@@ -135,8 +132,8 @@ func run() int {
 	check(err)
 	font, err = ttf.OpenFont("F25_Bank_Printer.ttf", 32)
 	check(err)
-	defer font.Close()
-	
+	defer font.Close() //debug font
+
 	window, err = sdl.CreateWindow("Go PathFinder", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, windowWidth, windowHeight, sdl.WINDOW_SHOWN)
 	check(err)
 	defer window.Destroy()
@@ -157,7 +154,7 @@ func run() int {
 		for i := 0; i < nbw*nbh; i++ {
 			rect := sdl.Rect{cx, cy, width, height}
 			Render.DrawRect(&rect)
-			
+
 			if i == star.Start {
 				Render.SetDrawColor(0, 0, 255, 255)
 				Render.FillRect(&rect)
@@ -170,16 +167,16 @@ func run() int {
 			if map_walls[i] == 2 {
 				Render.SetDrawColor(255, 255, 0, 255)
 				Render.DrawRect(&rect)
-			}else if map_walls[i] == 3 {
+			} else if map_walls[i] == 3 {
 				Render.SetDrawColor(255, 165, 0, 100)
 				Render.FillRect(&rect)
-			}else if map_walls[i] == 4 && i != star.Start {
+			} else if map_walls[i] == 4 && i != star.Start {
 				Render.SetDrawColor(51, 51, 51, 255)
 				Render.FillRect(&rect)
-			}else if map_walls[i] == 5 {
+			} else if map_walls[i] == 5 {
 				Render.SetDrawColor(255, 255, 255, 255)
 				Render.FillRect(&rect)
-			}else {
+			} else {
 				Render.SetDrawColor(50, 205, 50, 255)
 				Render.DrawRect(&rect)
 			}
@@ -188,7 +185,7 @@ func run() int {
 				Render.SetDrawColor(128, 0, 0, 255)
 				Render.DrawRect(&rect)
 			}
-			
+
 			if map_walls[i] == 1 {
 				Render.SetDrawColor(50, 205, 50, 255)
 				Render.FillRect(&rect)
@@ -197,38 +194,37 @@ func run() int {
 			//modes
 			if mode == 1 {
 				x, y := star.ToCoord(i)
-				str := strconv.Itoa(x)+","+strconv.Itoa(y)
-				printD(str, sdl.Rect{cx+1,cy+1,width-2,height-30}, font, Render)
-			}else if mode == 2 {
+				str := strconv.Itoa(x) + "," + strconv.Itoa(y)
+				printD(str, sdl.Rect{cx + 1, cy + 1, width - 2, height - 30}, font, Render)
+			} else if mode == 2 {
 				node := star.FindNei(i)
 				if node.Pos != -1 {
 					str := fmt.Sprintf("%.02f", node.GetF())
-					printD(str, sdl.Rect{cx+1,cy+2,40, 15}, font, Render)
+					printD(str, sdl.Rect{cx + 1, cy + 2, 40, 15}, font, Render)
 					str = fmt.Sprintf("%.02f", node.GetG())
-					printD(str, sdl.Rect{cx+1,cy+18,40,15}, font, Render)
+					printD(str, sdl.Rect{cx + 1, cy + 18, 40, 15}, font, Render)
 					str = fmt.Sprintf("%.02f", node.GetH())
-					printD(str, sdl.Rect{cx+1,cy+35,40, 15}, font, Render)
+					printD(str, sdl.Rect{cx + 1, cy + 35, 40, 15}, font, Render)
 				}
-			}
-			
-			if (i+1) != 0 && (i+1)%(nbw)==0 {
-				cy += height+heightSpacing
+			} //debug font
+
+			if (i+1) != 0 && (i+1)%(nbw) == 0 {
+				cy += height + heightSpacing
 				cx = xMargin
-			}else {
-				cx += width+widthSpacing 
+			} else {
+				cx += width + widthSpacing
 			}
 		}
 	}
 
-	
 	runMode := func() {
 		Render.SetDrawColor(0, 0, 0, 255)
 		Render.Clear()
-		
+
 		renderMap()
-		
+
 		Render.Present()
-		
+
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
@@ -237,26 +233,26 @@ func run() int {
 			case *sdl.MouseButtonEvent:
 				if t.Type == sdl.MOUSEBUTTONUP {
 					canUpdate = !canUpdate
-					print("start pos : ",star.Start,", end pos : ", star.End, "\n")
+					print("start pos : ", star.Start, ", end pos : ", star.End, "\n")
 				}
 				break
 			case *sdl.KeyboardEvent:
 				if t.Type == sdl.KEYDOWN {
-				if t.Keysym.Sym == sdl.GetKeyFromName("Tab"){
-					deleteMapCache(&map_walls)
-					guiMode = 1 //go to editMode
-					print("is in edit mode!!!\n")
-				}else if t.Keysym.Sym == sdl.GetKeyFromName("Space"){
-					mode++
-					if mode > (nbMode-1) {
-						mode = 0
+					if t.Keysym.Sym == sdl.GetKeyFromName("Tab") {
+						deleteMapCache(&map_walls)
+						guiMode = 1 //go to editMode
+						print("is in edit mode!!!\n")
+					} else if t.Keysym.Sym == sdl.GetKeyFromName("Space") {
+						mode++
+						if mode > (nbMode - 1) {
+							mode = 0
+						}
+					} else if t.Keysym.Sym == sdl.GetKeyFromName("R") {
+						deleteMapCache(&map_walls)
+						star.Init()
+						gotPath = false
+						canUpdate = false
 					}
-				}else if t.Keysym.Sym == sdl.GetKeyFromName("R"){
-					deleteMapCache(&map_walls)
-					star.Init()
-					gotPath = false
-					canUpdate = false
-				}
 				}
 				break
 			}
@@ -264,23 +260,23 @@ func run() int {
 
 		if star.IsFinished() && !gotPath {
 			path = star.GetFinalPath()
-			for _,n := range(path) {
+			for _, n := range path {
 				if n != star.End {
 					map_walls[n] = 5
 				}
 			}
-			
+
 			gotPath = true
 
 		}
-		
-		if canUpdate && time.Now().Sub(timer_update)>100000000 && !star.IsFinished() {
+
+		if canUpdate && time.Now().Sub(timer_update) > 100000000 && !star.IsFinished() {
 			timer_update = time.Now()
-			star.Update()
+			starChan := make(chan bool)
+			go star.Update(starChan)
+			<-starChan
 		}
 
-		
-		
 		sdl.Delay(16)
 	}
 
@@ -296,48 +292,48 @@ func run() int {
 				break
 			case *sdl.MouseButtonEvent:
 				if t.Type == sdl.MOUSEBUTTONUP {
-					
+
 				}
 				break
 			case *sdl.KeyboardEvent:
 				if t.Type == sdl.KEYDOWN {
-				if t.Keysym.Sym == sdl.GetKeyFromName("Tab"){
-					guiMode = 0 //go to runMode
-					saveToMapFile(map_walls)
-					star.Init()
-				}else if t.Keysym.Sym == sdl.GetKeyFromName("Down"){
-					star.CurNode.Pos+=nbw
-					if star.CurNode.Pos > nbw*nbh-1 {
-						star.CurNode.Pos-=nbw
-					}
-				}else if t.Keysym.Sym == sdl.GetKeyFromName("Up"){
-					star.CurNode.Pos-=nbw
-					if star.CurNode.Pos < 0 {
-						star.CurNode.Pos+=nbw
-					}
-				}else if t.Keysym.Sym == sdl.GetKeyFromName("Left"){
-					star.CurNode.Pos--
-					if star.CurNode.Pos < 0 {
-						star.CurNode.Pos++
-					}
-				}else if t.Keysym.Sym == sdl.GetKeyFromName("Right"){
-					star.CurNode.Pos++
-					if star.CurNode.Pos > nbw*nbh-1 {
+					if t.Keysym.Sym == sdl.GetKeyFromName("Tab") {
+						guiMode = 0 //go to runMode
+						saveToMapFile(map_walls)
+						star.Init()
+					} else if t.Keysym.Sym == sdl.GetKeyFromName("Down") {
+						star.CurNode.Pos += nbw
+						if star.CurNode.Pos > nbw*nbh-1 {
+							star.CurNode.Pos -= nbw
+						}
+					} else if t.Keysym.Sym == sdl.GetKeyFromName("Up") {
+						star.CurNode.Pos -= nbw
+						if star.CurNode.Pos < 0 {
+							star.CurNode.Pos += nbw
+						}
+					} else if t.Keysym.Sym == sdl.GetKeyFromName("Left") {
 						star.CurNode.Pos--
+						if star.CurNode.Pos < 0 {
+							star.CurNode.Pos++
+						}
+					} else if t.Keysym.Sym == sdl.GetKeyFromName("Right") {
+						star.CurNode.Pos++
+						if star.CurNode.Pos > nbw*nbh-1 {
+							star.CurNode.Pos--
+						}
+					} else if t.Keysym.Sym == sdl.GetKeyFromName("S") {
+						star.Start = star.CurNode.Pos
+						print("start new pos : ", star.Start, "\n")
+					} else if t.Keysym.Sym == sdl.GetKeyFromName("E") {
+						star.End = star.CurNode.Pos
+						print("end new pos : ", star.End, "\n")
+					} else if t.Keysym.Sym == sdl.GetKeyFromName("W") {
+						if map_walls[star.CurNode.Pos] == 1 {
+							map_walls[star.CurNode.Pos] = 0
+						} else {
+							map_walls[star.CurNode.Pos] = 1
+						}
 					}
-				}else if t.Keysym.Sym == sdl.GetKeyFromName("S"){
-					star.Start = star.CurNode.Pos
-					print("start new pos : ",star.Start,"\n")
-				}else if t.Keysym.Sym == sdl.GetKeyFromName("E"){
-					star.End = star.CurNode.Pos
-					print("end new pos : ",star.End,"\n")
-				}else if t.Keysym.Sym == sdl.GetKeyFromName("W"){
-					if map_walls[star.CurNode.Pos] == 1 {
-						map_walls[star.CurNode.Pos] = 0
-					}else {
-						map_walls[star.CurNode.Pos] = 1
-					}
-				}
 				}
 				break
 			}
@@ -351,7 +347,7 @@ func run() int {
 			rect := sdl.Rect{0, 0, 50, 50}
 			printD("run", rect, font, Render)
 			Render.Present()
-		}else{
+		} else {
 			editMode()
 			rect := sdl.Rect{0, 0, 67, 50}
 			printD("edit", rect, font, Render)
@@ -360,4 +356,3 @@ func run() int {
 	}
 	return 0
 }
-
