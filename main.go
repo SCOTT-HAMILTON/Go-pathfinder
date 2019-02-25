@@ -16,6 +16,8 @@ import (
 const nbw = 10
 const nbh = 12
 
+const DEBUGMODE = false
+
 func check(err error) {
 	if err != nil {
 		panic(err)
@@ -98,11 +100,10 @@ func run() int {
 	map_walls := loadMap()
 
 	star := PathFinderAlgo.NewAStar(nbw, nbh, 100, 19, &map_walls)
+	djk := PathFinderAlgo.NewDjikstra(nbw, nbh, 100, 19, &map_walls)
+
 	star.Init()
-
-	//star.Update()
-
-	print("Dist test : ", float32(star.Dist(0, 11)), "\n")
+	djk.Init()
 
 	const xMargin = 10
 	const yMargin = 10
@@ -114,15 +115,14 @@ func run() int {
 	windowHeight := int32(yMargin*2 + height*nbh + (nbh-1)*heightSpacing)
 	mode := 0 //mode for debugging
 	const nbMode = 3
-	gotPath := false
-	var path []int
 	canUpdate := false
-
+	guiMode := 0
+	canRenderPath := true
 	timer_update := time.Now()
 
 	var window *sdl.Window
 	var font *ttf.Font //debug font
-	var running bool
+	running := true
 	var err error
 
 	sdl.Init(sdl.INIT_EVERYTHING)
@@ -133,7 +133,6 @@ func run() int {
 	font, err = ttf.OpenFont("F25_Bank_Printer.ttf", 32)
 	check(err)
 	defer font.Close() //debug font
-
 	window, err = sdl.CreateWindow("Go PathFinder", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, windowWidth, windowHeight, sdl.WINDOW_SHOWN)
 	check(err)
 	defer window.Destroy()
@@ -142,53 +141,61 @@ func run() int {
 
 	Render, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_PRESENTVSYNC)
 	check(err)
-
 	Render.SetDrawColor(0, 0, 0, 255)
 	defer Render.Destroy()
 
-	running = true
-	guiMode := 0 //run mode is 0, edit mode is 1
-	renderMap := func() {
+	renderPath := func(pathColor sdl.Color) {
 		cx := int32(xMargin)
 		cy := int32(yMargin)
+		if canRenderPath {
+			for _, n := range star.Path {
+				if n == star.End {
+					continue
+				}
+				x, y := star.ToCoord(n)
+				x = xMargin + x*width + x*widthSpacing
+				y = yMargin + y*height + y*heightSpacing
+				rect := sdl.Rect{int32(x), int32(y), width, height}
+
+				Render.SetDrawColor(66, 82, 90, 100)
+				Render.FillRect(&rect)
+			}
+
+			for _, n := range djk.Path {
+				if n == djk.End {
+					continue
+				}
+				x, y := djk.ToCoord(n)
+				x = xMargin + x*width + x*widthSpacing
+				y = yMargin + y*height + y*heightSpacing
+				rect := sdl.Rect{int32(x), int32(y), width, height}
+
+				Render.SetDrawColor(224, 28, 85, 100)
+				Render.FillRect(&rect)
+			}
+		}
+
 		for i := 0; i < nbw*nbh; i++ {
 			rect := sdl.Rect{cx, cy, width, height}
-			Render.DrawRect(&rect)
+			if DEBUGMODE {
+				if map_walls[i] == 2 {
+					Render.SetDrawColor(255, 255, 0, 255)
+					Render.DrawRect(&rect)
+				} else if map_walls[i] == 3 {
+					Render.SetDrawColor(255, 165, 0, 100)
+					Render.FillRect(&rect)
+				} else if map_walls[i] == 4 && i != star.Start {
+					Render.SetDrawColor(51, 51, 51, 255)
+					Render.FillRect(&rect)
+				} else {
+					Render.SetDrawColor(50, 205, 50, 255)
+					Render.DrawRect(&rect)
+				}
 
-			if i == star.Start {
-				Render.SetDrawColor(0, 0, 255, 255)
-				Render.FillRect(&rect)
-			}
-			if i == star.End {
-				Render.SetDrawColor(255, 0, 0, 255)
-				Render.FillRect(&rect)
-			}
-
-			if map_walls[i] == 2 {
-				Render.SetDrawColor(255, 255, 0, 255)
-				Render.DrawRect(&rect)
-			} else if map_walls[i] == 3 {
-				Render.SetDrawColor(255, 165, 0, 100)
-				Render.FillRect(&rect)
-			} else if map_walls[i] == 4 && i != star.Start {
-				Render.SetDrawColor(51, 51, 51, 255)
-				Render.FillRect(&rect)
-			} else if map_walls[i] == 5 {
-				Render.SetDrawColor(255, 255, 255, 255)
-				Render.FillRect(&rect)
-			} else {
-				Render.SetDrawColor(50, 205, 50, 255)
-				Render.DrawRect(&rect)
-			}
-
-			if i == star.CurNode.Pos {
-				Render.SetDrawColor(128, 0, 0, 255)
-				Render.DrawRect(&rect)
-			}
-
-			if map_walls[i] == 1 {
-				Render.SetDrawColor(50, 205, 50, 255)
-				Render.FillRect(&rect)
+				if i == star.CurNode.Pos {
+					Render.SetDrawColor(128, 0, 0, 255)
+					Render.DrawRect(&rect)
+				}
 			}
 
 			//modes
@@ -217,12 +224,50 @@ func run() int {
 		}
 	}
 
+	renderMap := func(drawCurPos bool) {
+		cx := int32(xMargin)
+		cy := int32(yMargin)
+		for i := 0; i < nbw*nbh; i++ {
+			rect := sdl.Rect{cx, cy, width, height}
+			Render.DrawRect(&rect)
+
+			if i == star.Start {
+				Render.SetDrawColor(0, 0, 255, 255)
+				Render.FillRect(&rect)
+			}
+			if i == star.End {
+				Render.SetDrawColor(255, 0, 0, 255)
+				Render.FillRect(&rect)
+			}
+
+			if map_walls[i] == 1 {
+				Render.SetDrawColor(50, 205, 50, 255)
+				Render.FillRect(&rect)
+			} else {
+				Render.SetDrawColor(50, 205, 50, 255)
+				Render.DrawRect(&rect)
+			}
+
+			if drawCurPos && i == star.CurNode.Pos {
+				Render.SetDrawColor(128, 0, 0, 255)
+				Render.DrawRect(&rect)
+			}
+
+			if (i+1) != 0 && (i+1)%(nbw) == 0 {
+				cy += height + heightSpacing
+				cx = xMargin
+			} else {
+				cx += width + widthSpacing
+			}
+		}
+	}
+
 	runMode := func() {
 		Render.SetDrawColor(0, 0, 0, 255)
 		Render.Clear()
 
-		renderMap()
-
+		renderMap(false)
+		renderPath(sdl.Color{200, 200, 200, 10})
 		Render.Present()
 
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -233,6 +278,9 @@ func run() int {
 			case *sdl.MouseButtonEvent:
 				if t.Type == sdl.MOUSEBUTTONUP {
 					canUpdate = !canUpdate
+					if !canRenderPath {
+						canRenderPath = true
+					}
 					print("start pos : ", star.Start, ", end pos : ", star.End, "\n")
 				}
 				break
@@ -248,9 +296,10 @@ func run() int {
 							mode = 0
 						}
 					} else if t.Keysym.Sym == sdl.GetKeyFromName("R") {
+						canRenderPath = false
 						deleteMapCache(&map_walls)
 						star.Init()
-						gotPath = false
+						djk.Init()
 						canUpdate = false
 					}
 				}
@@ -258,23 +307,22 @@ func run() int {
 			}
 		}
 
-		if star.IsFinished() && !gotPath {
-			path = star.GetFinalPath()
-			for _, n := range path {
-				if n != star.End {
-					map_walls[n] = 5
-				}
-			}
-
-			gotPath = true
-
-		}
-
-		if canUpdate && time.Now().Sub(timer_update) > 100000000 && !star.IsFinished() {
+		if canUpdate && time.Now().Sub(timer_update) > 100000000 {
 			timer_update = time.Now()
 			starChan := make(chan bool)
 			go star.Update(starChan)
+
+			djkChan := make(chan bool)
+			go djk.Update(djkChan)
+
 			<-starChan
+			<-djkChan
+
+			{
+				star.UpdateFinalPath()
+				djk.UpdateFinalPath()
+
+			}
 		}
 
 		sdl.Delay(16)
@@ -283,7 +331,7 @@ func run() int {
 	editMode := func() {
 		Render.SetDrawColor(0, 0, 0, 255)
 		Render.Clear()
-		renderMap()
+		renderMap(true)
 		Render.Present()
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
@@ -301,32 +349,39 @@ func run() int {
 						guiMode = 0 //go to runMode
 						saveToMapFile(map_walls)
 						star.Init()
+						djk.Init()
 					} else if t.Keysym.Sym == sdl.GetKeyFromName("Down") {
 						star.CurNode.Pos += nbw
 						if star.CurNode.Pos > nbw*nbh-1 {
 							star.CurNode.Pos -= nbw
 						}
+						djk.CurNode.Pos = star.CurNode.Pos
 					} else if t.Keysym.Sym == sdl.GetKeyFromName("Up") {
 						star.CurNode.Pos -= nbw
 						if star.CurNode.Pos < 0 {
 							star.CurNode.Pos += nbw
 						}
+						djk.CurNode.Pos = star.CurNode.Pos
 					} else if t.Keysym.Sym == sdl.GetKeyFromName("Left") {
 						star.CurNode.Pos--
 						if star.CurNode.Pos < 0 {
 							star.CurNode.Pos++
 						}
+						djk.CurNode.Pos = star.CurNode.Pos
 					} else if t.Keysym.Sym == sdl.GetKeyFromName("Right") {
 						star.CurNode.Pos++
 						if star.CurNode.Pos > nbw*nbh-1 {
 							star.CurNode.Pos--
 						}
+						djk.CurNode.Pos = star.CurNode.Pos
 					} else if t.Keysym.Sym == sdl.GetKeyFromName("S") {
 						star.Start = star.CurNode.Pos
 						print("start new pos : ", star.Start, "\n")
+						djk.Start = star.Start
 					} else if t.Keysym.Sym == sdl.GetKeyFromName("E") {
 						star.End = star.CurNode.Pos
 						print("end new pos : ", star.End, "\n")
+						djk.Start = star.Start
 					} else if t.Keysym.Sym == sdl.GetKeyFromName("W") {
 						if map_walls[star.CurNode.Pos] == 1 {
 							map_walls[star.CurNode.Pos] = 0
