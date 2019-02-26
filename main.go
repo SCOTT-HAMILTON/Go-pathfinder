@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/SCOTT-HAMILTON/PathFinderAlgo"
+	"github.com/SCOTT-HAMILTON/Go-pathfinderalgo"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 	"io/ioutil"
