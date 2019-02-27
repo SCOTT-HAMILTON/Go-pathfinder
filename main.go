@@ -3,7 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/SCOTT-HAMILTON/Go-pathfinderalgo"
+	"github.com/SCOTT-HAMILTON/Go-pathfinderalgo/AStar"
+	"github.com/SCOTT-HAMILTON/Go-pathfinderalgo/Djikstra"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 	"io/ioutil"
@@ -99,8 +100,8 @@ func run() int {
 	//initMapFile()
 	map_walls := loadMap()
 
-	star := PathFinderAlgo.NewAStar(nbw, nbh, 100, 19, &map_walls)
-	djk := PathFinderAlgo.NewDjikstra(nbw, nbh, 100, 19, &map_walls)
+	star := AStar.NewAStar(nbw, nbh, 100, 19, &map_walls)
+	djk := Djikstra.NewDjikstra(nbw, nbh, 100, 19, &map_walls)
 
 	star.Init()
 	djk.Init()
